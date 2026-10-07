@@ -1,1 +1,14 @@
 2026-02-15 14:52:59 INFO: Server started on 0.0.0.0:12345
+2026-10-07 13:13:32 INFO: Server started on 0.0.0.0:12345
+2026-10-07 13:13:33 INFO: Connected by ('127.0.0.1', 63100)
+2026-10-07 13:13:33 INFO: ('127.0.0.1', 63100) authenticated as 'a'
+2026-10-07 13:13:33 INFO: Connected by ('127.0.0.1', 63101)
+2026-10-07 13:13:33 INFO: ('127.0.0.1', 63101) authenticated as 'b'
+2026-10-07 13:13:33 INFO: ('127.0.0.1', 63100) (a) authenticated as admin.
+2026-10-07 13:13:34 INFO: Admin ('127.0.0.1', 63100) (a) added blocked keyword: spam
+2026-10-07 13:13:34 INFO: Allowed message from b@('127.0.0.1', 63101): hello
+2026-10-07 13:13:34 WARNING: Blocked message from b@('127.0.0.1', 63101): this is SPAM
+2026-10-07 13:13:34 INFO: Allowed message from b@('127.0.0.1', 63101): second part
+2026-10-07 13:13:34 INFO: Admin ('127.0.0.1', 63100) (a) removed blocked keyword: spam
+2026-10-07 13:13:34 INFO: Disconnected ('127.0.0.1', 63100) (a)
+2026-10-07 13:13:34 INFO: Disconnected ('127.0.0.1', 63101) (b)
