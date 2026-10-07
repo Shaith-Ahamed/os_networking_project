@@ -1,1 +1,72 @@
 2026-02-15 14:52:59 INFO: Server started on 0.0.0.0:12345
+2026-10-07 13:13:32 INFO: Server started on 0.0.0.0:12345
+2026-10-07 13:13:33 INFO: Connected by ('127.0.0.1', 63100)
+2026-10-07 13:13:33 INFO: ('127.0.0.1', 63100) authenticated as 'a'
+2026-10-07 13:13:33 INFO: Connected by ('127.0.0.1', 63101)
+2026-10-07 13:13:33 INFO: ('127.0.0.1', 63101) authenticated as 'b'
+2026-10-07 13:13:33 INFO: ('127.0.0.1', 63100) (a) authenticated as admin.
+2026-10-07 13:13:34 INFO: Admin ('127.0.0.1', 63100) (a) added blocked keyword: spam
+2026-10-07 13:13:34 INFO: Allowed message from b@('127.0.0.1', 63101): hello
+2026-10-07 13:13:34 WARNING: Blocked message from b@('127.0.0.1', 63101): this is SPAM
+2026-10-07 13:13:34 INFO: Allowed message from b@('127.0.0.1', 63101): second part
+2026-10-07 13:13:34 INFO: Admin ('127.0.0.1', 63100) (a) removed blocked keyword: spam
+2026-10-07 13:13:34 INFO: Disconnected ('127.0.0.1', 63100) (a)
+2026-10-07 13:13:34 INFO: Disconnected ('127.0.0.1', 63101) (b)
+2026-10-07 13:16:55 INFO: Server started on 0.0.0.0:12345
+2026-10-07 13:16:56 INFO: Connected by ('127.0.0.1', 58365)
+2026-10-07 13:16:56 INFO: ('127.0.0.1', 58365) authenticated as 'admin1'
+2026-10-07 13:16:56 INFO: Connected by ('127.0.0.1', 58366)
+2026-10-07 13:16:56 INFO: ('127.0.0.1', 58366) authenticated as 'bob'
+2026-10-07 13:16:57 INFO: Connected by ('127.0.0.1', 58367)
+2026-10-07 13:16:57 INFO: ('127.0.0.1', 58367) authenticated as 'flood'
+2026-10-07 13:16:57 INFO: ('127.0.0.1', 58365) (admin1) authenticated as admin.
+2026-10-07 13:16:57 INFO: Allowed message from flood@('127.0.0.1', 58367): m0
+2026-10-07 13:16:57 INFO: Allowed message from flood@('127.0.0.1', 58367): m1
+2026-10-07 13:16:57 INFO: Allowed message from flood@('127.0.0.1', 58367): m2
+2026-10-07 13:16:57 INFO: Allowed message from flood@('127.0.0.1', 58367): m3
+2026-10-07 13:16:57 INFO: Allowed message from flood@('127.0.0.1', 58367): m4
+2026-10-07 13:16:57 WARNING: Rate limit exceeded by flood@('127.0.0.1', 58367)
+2026-10-07 13:16:57 WARNING: Rate limit exceeded by flood@('127.0.0.1', 58367)
+2026-10-07 13:16:58 INFO: Admin ('127.0.0.1', 58365) (admin1) kicked user: bob
+2026-10-07 13:16:58 INFO: Disconnected ('127.0.0.1', 58366) (bob)
+2026-10-07 13:16:59 INFO: Disconnected ('127.0.0.1', 58365) (admin1)
+2026-10-07 13:16:59 INFO: Disconnected ('127.0.0.1', 58367) (flood)
+2026-10-07 13:18:48 INFO: Server started on 0.0.0.0:12345
+2026-10-07 13:18:49 INFO: Connected by ('127.0.0.1', 61300)
+2026-10-07 13:18:49 INFO: ('127.0.0.1', 61300) authenticated as 'adm'
+2026-10-07 13:18:49 INFO: ('127.0.0.1', 61300) (adm) authenticated as admin.
+2026-10-07 13:18:50 INFO: Admin ('127.0.0.1', 61300) (adm) blocked IP: 10.0.0.0/8
+2026-10-07 13:18:51 INFO: Allowed message from adm@('127.0.0.1', 61300): hi
+2026-10-07 13:18:52 INFO: Disconnected ('127.0.0.1', 61300) (adm)
+2026-10-07 13:18:59 INFO: Server started on 0.0.0.0:12345
+2026-10-07 13:19:00 INFO: Connected by ('127.0.0.1', 49684)
+2026-10-07 13:19:00 INFO: ('127.0.0.1', 49684) authenticated as 'adm'
+2026-10-07 13:19:00 INFO: Connected by ('127.0.0.1', 49685)
+2026-10-07 13:19:00 INFO: ('127.0.0.1', 49685) authenticated as 'bob'
+2026-10-07 13:19:00 INFO: ('127.0.0.1', 49684) (adm) authenticated as admin.
+2026-10-07 13:19:00 INFO: Admin ('127.0.0.1', 49684) (adm) blocked IP: 10.0.0.0/8
+2026-10-07 13:19:01 INFO: Allowed message from adm@('127.0.0.1', 49684): hi
+2026-10-07 13:19:02 INFO: Admin ('127.0.0.1', 49684) (adm) blocked IP: 127.0.0.0/24
+2026-10-07 13:19:02 WARNING: Rate limit exceeded by adm@('127.0.0.1', 49684)
+2026-10-07 13:19:02 WARNING: Blocked connection attempt from 127.0.0.1
+2026-10-07 13:19:03 WARNING: Rate limit exceeded by adm@('127.0.0.1', 49684)
+2026-10-07 13:19:03 WARNING: Rate limit exceeded by adm@('127.0.0.1', 49684)
+2026-10-07 13:19:03 INFO: Disconnected ('127.0.0.1', 49684) (adm)
+2026-10-07 13:19:03 ERROR: Error handling client ('127.0.0.1', 49685): [WinError 10054] An existing connection was forcibly closed by the remote host
+2026-10-07 13:19:03 INFO: Disconnected ('127.0.0.1', 49685) (bob)
+2026-10-07 13:19:09 INFO: Server started on 0.0.0.0:12345
+2026-10-07 13:19:10 INFO: Connected by ('127.0.0.1', 53386)
+2026-10-07 13:19:10 INFO: ('127.0.0.1', 53386) authenticated as 'adm'
+2026-10-07 13:19:10 INFO: Connected by ('127.0.0.1', 53387)
+2026-10-07 13:19:10 INFO: ('127.0.0.1', 53387) authenticated as 'bob'
+2026-10-07 13:19:11 INFO: ('127.0.0.1', 53386) (adm) authenticated as admin.
+2026-10-07 13:19:11 INFO: Admin ('127.0.0.1', 53386) (adm) blocked IP: 10.0.0.0/8
+2026-10-07 13:19:12 INFO: Allowed message from adm@('127.0.0.1', 53386): hi
+2026-10-07 13:19:13 INFO: Admin ('127.0.0.1', 53386) (adm) blocked IP: 127.0.0.0/24
+2026-10-07 13:19:23 WARNING: Blocked message from adm@('127.0.0.1', 53386): hi
+2026-10-07 13:19:23 WARNING: Blocked connection attempt from 127.0.0.1
+2026-10-07 13:19:33 INFO: Admin ('127.0.0.1', 53386) (adm) unblocked IP: 127.0.0.0/24
+2026-10-07 13:19:34 INFO: Admin ('127.0.0.1', 53386) (adm) unblocked IP: 10.0.0.0/8
+2026-10-07 13:19:34 INFO: Disconnected ('127.0.0.1', 53386) (adm)
+2026-10-07 13:19:34 ERROR: Error handling client ('127.0.0.1', 53387): [WinError 10054] An existing connection was forcibly closed by the remote host
+2026-10-07 13:19:34 INFO: Disconnected ('127.0.0.1', 53387) (bob)

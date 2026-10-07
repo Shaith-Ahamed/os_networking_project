@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Firewall Dashboard</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --panel: #ffffff; --text: #1c2330; --muted: #667085; --line: #e3e6eb;
+    --accent: #2f6fed; --ok: #1a7f4b; --warn: #b26a00; --bad: #c0362c; --chip: #eef1f6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151b; --panel: #1b2029; --text: #e6e9ef; --muted: #98a2b3; --line: #2a303c;
+      --accent: #6b9bff; --ok: #4cc38a; --warn: #f0b04a; --bad: #ff7b70; --chip: #262c38;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  h1 { font-size: 17px; margin: 0; }
+  h2 { font-size: 13px; margin: 0 0 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  main { max-width: 1200px; margin: 0 auto; padding: 16px; display: grid; gap: 16px; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .tile, .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+  .tile .n { font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .tile .l { color: var(--muted); font-size: 12px; }
+  .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  th { color: var(--muted); font-weight: 500; font-size: 12px; }
+  td.r, th.r { text-align: right; }
+  .empty { color: var(--muted); padding: 6px 0; }
+  .chip { display: inline-block; background: var(--chip); border-radius: 999px; padding: 1px 8px; font-size: 12px; }
+  .chip.block { color: var(--bad); } .chip.warn { color: var(--warn); } .chip.redact { color: var(--accent); }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
+  input, select, button { font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 6px 9px; }
+  input { min-width: 0; flex: 1 1 120px; }
+  button { cursor: pointer; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.small { padding: 2px 8px; font-size: 12px; }
+  button.danger { color: var(--bad); }
+  #log { height: 300px; overflow-y: auto; font: 12px/1.5 ui-monospace, Consolas, monospace; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px; }
+  .ev.WARNING { color: var(--warn); } .ev.ERROR { color: var(--bad); } .ev .t { color: var(--muted); }
+  #toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 8px 14px; border-radius: 8px; opacity: 0; transition: opacity .2s; pointer-events: none; max-width: 90vw; }
+  #toast.show { opacity: .95; } #toast.err { background: var(--bad); color: #fff; }
+  #login { max-width: 360px; margin: 12vh auto; }
+  .hidden { display: none !important; }
+  .muted { color: var(--muted); }
+  @media (max-width: 480px) { main { padding: 12px; } .cols { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<section id="login" class="panel hidden">
+  <h1>Firewall Dashboard</h1>
+  <p class="muted">Enter the admin password to continue.</p>
+  <form id="loginForm" class="row">
+    <input id="password" type="password" placeholder="Admin password" autocomplete="current-password" required>
+    <button class="primary">Log in</button>
+  </form>
+  <p id="loginError" class="muted" style="color: var(--bad)"></p>
+</section>
+
+<div id="app" class="hidden">
+  <header>
+    <h1>Firewall Dashboard <span id="tlsChip" class="chip"></span></h1>
+    <div><span class="muted">Uptime <span id="uptime"></span></span> &nbsp; <button class="small" id="logout">Log out</button></div>
+  </header>
+  <main>
+    <div class="tiles" id="tiles"></div>
+
+    <div class="cols">
+      <section class="panel">
+        <h2>Connected users</h2>
+        <div id="users"></div>
+        <div class="row">
+          <input id="bcText" placeholder="Broadcast a message to everyone">
+          <button id="bcSend">Broadcast</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Top blocked IPs</h2>
+        <div id="topIps"></div>
+      </section>
+    </div>
+
+    <div class="cols">
+      <section class="panel">
+        <h2>Keyword rules</h2>
+        <div id="keywords"></div>
+        <form id="kwForm" class="row">
+          <input id="kwPattern" placeholder="Pattern" required>
+          <select id="kwKind"><option>word</option><option>substring</option><option>regex</option></select>
+          <select id="kwAction"><option>block</option><option>warn</option><option>redact</option></select>
+          <button class="primary">Add</button>
+        </form>
+      </section>
+
+      <section class="panel">
+        <h2>Blocked IPs</h2>
+        <div id="blocked"></div>
+        <form id="blockForm" class="row">
+          <input id="blockIp" placeholder="IP or CIDR, e.g. 10.0.0.0/8" required>
+          <input id="blockDur" placeholder="Duration (blank = permanent, e.g. 10m)" style="flex-basis: 150px">
+          <button class="primary">Block</button>
+        </form>
+      </section>
+
+      <section class="panel">
+        <h2>Allowlist mode <span id="allowChip" class="chip"></span></h2>
+        <div id="allowed"></div>
+        <form id="allowForm" class="row">
+          <input id="allowIp" placeholder="IP or CIDR" required>
+          <button class="primary">Add</button>
+          <button type="button" id="allowToggle"></button>
+        </form>
+      </section>
+    </div>
+
+    <section class="panel">
+      <h2>Live events</h2>
+      <div id="log"></div>
+    </section>
+  </main>
+</div>
+<div id="toast"></div>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+let token = null;
+try { token = sessionStorage.getItem('fwtoken'); } catch (e) {}
+let lastEvent = 0, timer = null, state = null;
+
+// Build DOM with textContent only: chat text and usernames are untrusted.
+function el(tag, props, ...kids) {
+  const node = document.createElement(tag);
+  Object.assign(node, props || {});
+  for (const k of kids) node.append(k);
+  return node;
+}
+function fmtDuration(s) {
+  if (s == null) return 'permanent';
+  if (s < 60) return s + 's';
+  if (s < 3600) return Math.floor(s / 60) + 'm ' + (s % 60) + 's';
+  return Math.floor(s / 3600) + 'h ' + Math.floor(s % 3600 / 60) + 'm';
+}
+function toast(msg, isErr) {
+  const t = $('toast'); t.textContent = msg; t.className = 'show' + (isErr ? ' err' : '');
+  clearTimeout(toast.h); toast.h = setTimeout(() => t.className = '', 3500);
+}
+function showLogin(msg) {
+  token = null; try { sessionStorage.removeItem('fwtoken'); } catch (e) {}
+  clearInterval(timer);
+  $('app').classList.add('hidden'); $('login').classList.remove('hidden');
+  $('loginError').textContent = msg || '';
+}
+
+async function api(path, body) {
+  const opts = { headers: { 'Authorization': 'Bearer ' + token } };
+  if (body !== undefined) { opts.method = 'POST'; opts.body = JSON.stringify(body); }
+  const res = await fetch(path, opts);
+  if (res.status === 401) { showLogin('Session expired. Please log in again.'); throw new Error('auth'); }
+  return res.json();
+}
+async function act(command, args, text) {
+  try {
+    const r = await api('/api/action', { command, args: args || [], text: text || '' });
+    toast(r.lines.join(' '), !r.ok);
+    refresh();
+  } catch (e) { if (e.message !== 'auth') toast('Request failed', true); }
+}
+
+function table(headers, rows, emptyText) {
+  if (!rows.length) return el('div', { className: 'empty', textContent: emptyText });
+  const head = el('tr', {}, ...headers.map(h => el('th', { textContent: h })));
+  return el('table', {}, el('thead', {}, head), el('tbody', {}, ...rows));
+}
+function btn(label, onclick, danger) {
+  return el('button', { className: 'small' + (danger ? ' danger' : ''), textContent: label, onclick });
+}
+const td = (content, cls) => el('td', cls ? { className: cls } : {}, content);
+
+function render(s) {
+  state = s;
+  $('uptime').textContent = fmtDuration(s.uptime);
+  $('tlsChip').textContent = s.tls ? 'TLS on' : 'TLS off';
+  const st = s.stats;
+  const tiles = [
+    ['Online now', s.users.length], ['Messages allowed', st.messages_allowed], ['Messages blocked', st.messages_blocked],
+    ['Redacted', st.messages_redacted], ['Rate limited', st.rate_limited], ['Refused connections', st.connections_refused],
+    ['Auto-bans', st.autobans], ['Failed admin logins', st.admin_failures], ['Kicks', st.kicks],
+  ];
+  $('tiles').replaceChildren(...tiles.map(([l, n]) =>
+    el('div', { className: 'tile' }, el('div', { className: 'n', textContent: n }), el('div', { className: 'l', textContent: l }))));
+
+  $('users').replaceChildren(table(['User', 'IP', 'Online', ''], s.users.map(u => el('tr', {},
+    td(u.username + (u.is_admin ? ' (admin)' : '') + (u.muted ? ' (muted)' : '')),
+    td(u.ip + ':' + u.port), td(fmtDuration(u.connected_for)),
+    td(el('span', {}, u.muted ? btn('Unmute', () => act('unmute', [u.username])) : btn('Mute', () => act('mute', [u.username])), ' ',
+        btn('Kick', () => act('kick', [u.username]), true)), 'r'))), 'Nobody is connected.'));
+
+  $('topIps').replaceChildren(table(['IP', 'Blocked'], s.top_blocked_ips.map(i => el('tr', {},
+    td(i.ip), td(i.count, 'r'))), 'Nothing blocked yet.'));
+
+  $('keywords').replaceChildren(table(['Pattern', 'Match', 'Action', ''], s.rules.keywords.map(k => el('tr', {},
+    td(k.pattern), td(k.kind), td(el('span', { className: 'chip ' + k.action, textContent: k.action })),
+    td(btn('Remove', () => act('rmkw', [k.pattern]), true), 'r'))), 'No keyword rules.'));
+
+  $('blocked').replaceChildren(table(['Rule', 'Expires in', ''], s.rules.blocked_ips.map(b => el('tr', {},
+    td(b.rule), td(fmtDuration(b.expires_in)), td(btn('Unblock', () => act('unblockip', [b.rule])), 'r'))), 'No blocked IPs.'));
+
+  const on = s.rules.allowlist_enabled;
+  $('allowChip').textContent = on ? 'ON' : 'OFF';
+  $('allowToggle').textContent = on ? 'Turn off' : 'Turn on';
+  $('allowToggle').onclick = () => act('allowlist', [on ? 'off' : 'on']);
+  $('allowed').replaceChildren(table(['Allowed IP / range', ''], s.rules.allowed_ips.map(a => el('tr', {},
+    td(a), td(btn('Remove', () => act('unallowip', [a]), true), 'r'))), on ? 'Empty: nobody can connect!' : 'No entries. Only used when the allowlist is ON.'));
+}
+
+async function refresh() {
+  try {
+    render(await api('/api/state'));
+    const data = await api('/api/events?since=' + lastEvent);
+    const log = $('log');
+    const atBottom = log.scrollTop + log.clientHeight >= log.scrollHeight - 20;
+    for (const e of data.events) {
+      lastEvent = Math.max(lastEvent, e.id);
+      log.append(el('div', { className: 'ev ' + e.level }, el('span', { className: 't', textContent: e.time + ' ' }), e.text));
+    }
+    while (log.childNodes.length > 500) log.firstChild.remove();
+    if (atBottom) log.scrollTop = log.scrollHeight;
+  } catch (e) { /* api() already handled auth errors */ }
+}
+
+function start() {
+  $('login').classList.add('hidden'); $('app').classList.remove('hidden');
+  lastEvent = 0; $('log').replaceChildren();
+  refresh(); timer = setInterval(refresh, 2000);
+}
+
+$('loginForm').onsubmit = async ev => {
+  ev.preventDefault();
+  try {
+    const res = await fetch('/api/login', { method: 'POST', body: JSON.stringify({ password: $('password').value }) });
+    const data = await res.json();
+    if (!res.ok) return $('loginError').textContent = data.error || 'Login failed';
+    token = data.token; try { sessionStorage.setItem('fwtoken', token); } catch (e) {}
+    $('password').value = ''; $('loginError').textContent = '';
+    start();
+  } catch (e) { $('loginError').textContent = 'Could not reach the server.'; }
+};
+$('logout').onclick = () => showLogin('');
+$('bcSend').onclick = () => { const t = $('bcText').value.trim(); if (t) { act('broadcast', [], t); $('bcText').value = ''; } };
+$('kwForm').onsubmit = ev => { ev.preventDefault(); act('addkw', [$('kwPattern').value, $('kwKind').value, $('kwAction').value]); $('kwPattern').value = ''; };
+$('blockForm').onsubmit = ev => {
+  ev.preventDefault();
+  const args = [$('blockIp').value.trim()]; if ($('blockDur').value.trim()) args.push($('blockDur').value.trim());
+  act('blockip', args); $('blockIp').value = ''; $('blockDur').value = '';
+};
+$('allowForm').onsubmit = ev => { ev.preventDefault(); act('allowip', [$('allowIp').value.trim()]); $('allowIp').value = ''; };
+
+if (token) start(); else showLogin('');
+</script>
+</body>
+</html>
