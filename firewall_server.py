@@ -4,6 +4,7 @@ import json
 import os
 import logging
 import time
+import ipaddress
 from collections import deque
 
 
@@ -43,7 +44,12 @@ def load_config():
             with open(CONFIG_FILE, 'r') as f:
                 config = json.load(f)
                 BLOCKED_KEYWORDS = [w.lower() for w in config.get('blocked_keywords', [])]
-                BLOCKED_IPS = config.get('blocked_ips', [])
+                BLOCKED_IPS = []
+                for rule in config.get('blocked_ips', []):
+                    if valid_ip_rule(rule):
+                        BLOCKED_IPS.append(rule)
+                    else:
+                        logging.warning(f"Ignoring invalid blocked IP rule in config: {rule}")
         else:
             BLOCKED_KEYWORDS = []
             BLOCKED_IPS = []
@@ -97,13 +103,35 @@ def remove_client(conn):
     except OSError:
         pass
 
+def valid_ip_rule(rule):
+    """True if rule is a single IP (1.2.3.4) or a CIDR range (192.168.1.0/24)."""
+    try:
+        ipaddress.ip_network(rule, strict=False)
+        return True
+    except ValueError:
+        return False
+
+def ip_is_blocked(ip):
+    """True if ip matches any blocked single IP or CIDR range."""
+    try:
+        address = ipaddress.ip_address(ip)
+    except ValueError:
+        return False
+    with state_lock:
+        rules = list(BLOCKED_IPS)
+    for rule in rules:
+        # a rule's address family may differ from the client's; that's just no match
+        if address in ipaddress.ip_network(rule, strict=False):
+            return True
+    return False
+
 def firewall_filter(message, addr):
     """Return True if message is allowed, False if blocked."""
     ip = addr[0]
     lowered = message.lower()
+    if ip_is_blocked(ip):
+        return False
     with state_lock:
-        if ip in BLOCKED_IPS:
-            return False
         for word in BLOCKED_KEYWORDS:
             if word in lowered:
                 return False
@@ -192,6 +220,9 @@ def handle_client(conn, addr):
                             send_line(conn, f"[Admin] Keyword '{word}' not found.")
                     elif len(parts) >= 3 and parts[1] == 'blockip':
                         ip = parts[2]
+                        if not valid_ip_rule(ip):
+                            send_line(conn, f"[Admin] '{ip}' is not a valid IP or CIDR range.")
+                            continue
                         with state_lock:
                             added = ip not in BLOCKED_IPS
                             if added:
@@ -275,9 +306,7 @@ def main():
         logging.info(f"Server started on {HOST}:{PORT}")
         while True:
             conn, addr = s.accept()
-            with state_lock:
-                ip_blocked = addr[0] in BLOCKED_IPS
-            if ip_blocked:
+            if ip_is_blocked(addr[0]):
                 print(f"[Firewall] Blocked connection attempt from {addr[0]}")
                 logging.warning(f"Blocked connection attempt from {addr[0]}")
                 send_line(conn, "[Firewall]: Your IP is blocked.")

@@ -48,8 +48,8 @@ Authenticate as admin:
 Then use:
 - `/admin addkw <word>` — Block a keyword
 - `/admin rmkw <word>` — Remove a blocked keyword
-- `/admin blockip <ip>` — Block an IP address
-- `/admin unblockip <ip>` — Unblock an IP address
+- `/admin blockip <ip or CIDR>` — Block an IP address or range (e.g. `10.0.0.5` or `192.168.1.0/24`)
+- `/admin unblockip <ip or CIDR>` — Remove a block, typed exactly as it was added
 - `/admin list` — Show blocked keywords, blocked IPs, and connected users
 - `/admin kick <username>` — Disconnect a user
 
