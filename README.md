@@ -50,6 +50,10 @@ Then use:
 - `/admin rmkw <word>` — Remove a blocked keyword
 - `/admin blockip <ip>` — Block an IP address
 - `/admin unblockip <ip>` — Unblock an IP address
+- `/admin list` — Show blocked keywords, blocked IPs, and connected users
+- `/admin kick <username>` — Disconnect a user
+
+Each client is rate limited (default 5 messages per 10 seconds, including commands). Extra messages are dropped with a warning. Adjust `RATE_LIMIT_MESSAGES` and `RATE_LIMIT_WINDOW` in `firewall_server.py`.
 
 ---
 

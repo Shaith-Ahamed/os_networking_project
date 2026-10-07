@@ -3,6 +3,8 @@ import threading
 import json
 import os
 import logging
+import time
+from collections import deque
 
 
 CONFIG_FILE = 'firewall_config.json'
@@ -10,8 +12,11 @@ LOG_FILE = 'firewall_server.log'
 HOST = '0.0.0.0'  # Listen on all interfaces
 PORT = 12345
 MAX_LINE = 4096  # longest allowed message (bytes) before the client is dropped
+RATE_LIMIT_MESSAGES = 5  # max messages (including commands) per client...
+RATE_LIMIT_WINDOW = 10   # ...within this many seconds
 
 clients = {}  # conn -> per-connection send lock
+client_info = {}  # conn -> (username, addr), set once the client authenticates
 BLOCKED_KEYWORDS = []
 BLOCKED_IPS = []
 
@@ -86,6 +91,7 @@ class LineReader:
 def remove_client(conn):
     with state_lock:
         clients.pop(conn, None)
+        client_info.pop(conn, None)
     try:
         conn.close()
     except OSError:
@@ -109,6 +115,7 @@ def handle_client(conn, addr):
     is_admin = False
     username = None
     reader = LineReader(conn)
+    recent = deque()  # timestamps of this client's recent messages
     # Require username authentication
     try:
         message = reader.read_line()
@@ -122,6 +129,8 @@ def handle_client(conn, addr):
                 remove_client(conn)
                 logging.warning(f"Connection from {addr} rejected: username '{username}' not allowed.")
                 return
+            with state_lock:
+                client_info[conn] = (username, addr)
             send_line(conn, f"[Firewall] Welcome, {username}!")
             logging.info(f"{addr} authenticated as '{username}'")
         else:
@@ -139,6 +148,15 @@ def handle_client(conn, addr):
             if message is None:
                 break
             print(f"[Received from {username}@{addr}]: {message}")
+            # Rate limiting: sliding window over the last RATE_LIMIT_WINDOW seconds
+            now = time.monotonic()
+            while recent and now - recent[0] > RATE_LIMIT_WINDOW:
+                recent.popleft()
+            if len(recent) >= RATE_LIMIT_MESSAGES:
+                logging.warning(f"Rate limit exceeded by {username}@{addr}")
+                send_line(conn, f"[Firewall]: Rate limit exceeded ({RATE_LIMIT_MESSAGES} messages per {RATE_LIMIT_WINDOW}s). Slow down.")
+                continue
+            recent.append(now)
             # Admin authentication and commands
             if message.startswith('/admin'):
                 parts = message.strip().split()
@@ -196,6 +214,29 @@ def handle_client(conn, addr):
                             logging.info(f"Admin {addr} ({username}) unblocked IP: {ip}")
                         else:
                             send_line(conn, f"[Admin] IP '{ip}' not found in block list.")
+                    elif len(parts) >= 2 and parts[1] == 'list':
+                        with state_lock:
+                            keywords = ', '.join(BLOCKED_KEYWORDS) or '(none)'
+                            ips = ', '.join(BLOCKED_IPS) or '(none)'
+                            users = ', '.join(f"{u}@{a[0]}:{a[1]}" for u, a in client_info.values()) or '(none)'
+                        send_line(conn, f"[Admin] Blocked keywords: {keywords}")
+                        send_line(conn, f"[Admin] Blocked IPs: {ips}")
+                        send_line(conn, f"[Admin] Connected users: {users}")
+                    elif len(parts) >= 3 and parts[1] == 'kick':
+                        target = parts[2]
+                        with state_lock:
+                            targets = [c for c, (u, _) in client_info.items() if u == target]
+                        for target_conn in targets:
+                            try:
+                                send_line(target_conn, "[Admin] You have been kicked from the server.")
+                            except OSError:
+                                pass
+                            remove_client(target_conn)
+                        if targets:
+                            send_line(conn, f"[Admin] Kicked {len(targets)} connection(s) for user '{target}'.")
+                            logging.info(f"Admin {addr} ({username}) kicked user: {target}")
+                        else:
+                            send_line(conn, f"[Admin] User '{target}' not found.")
                     else:
                         send_line(conn, "[Admin] Unknown command or missing argument.")
                 else:
@@ -216,7 +257,10 @@ def handle_client(conn, addr):
                 logging.warning(f"Blocked message from {username}@{addr}: {message}")
                 send_line(conn, "[Firewall]: Your message was blocked or your IP is blocked.")
         except Exception as e:
-            logging.error(f"Error handling client {addr}: {e}")
+            with state_lock:
+                kicked = conn not in clients  # socket was closed by /admin kick
+            if not kicked:
+                logging.error(f"Error handling client {addr}: {e}")
             break
     print(f"[-] Disconnected {addr}")
     logging.info(f"Disconnected {addr} ({username})")

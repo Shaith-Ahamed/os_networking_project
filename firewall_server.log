@@ -12,3 +12,22 @@
 2026-10-07 13:13:34 INFO: Admin ('127.0.0.1', 63100) (a) removed blocked keyword: spam
 2026-10-07 13:13:34 INFO: Disconnected ('127.0.0.1', 63100) (a)
 2026-10-07 13:13:34 INFO: Disconnected ('127.0.0.1', 63101) (b)
+2026-10-07 13:16:55 INFO: Server started on 0.0.0.0:12345
+2026-10-07 13:16:56 INFO: Connected by ('127.0.0.1', 58365)
+2026-10-07 13:16:56 INFO: ('127.0.0.1', 58365) authenticated as 'admin1'
+2026-10-07 13:16:56 INFO: Connected by ('127.0.0.1', 58366)
+2026-10-07 13:16:56 INFO: ('127.0.0.1', 58366) authenticated as 'bob'
+2026-10-07 13:16:57 INFO: Connected by ('127.0.0.1', 58367)
+2026-10-07 13:16:57 INFO: ('127.0.0.1', 58367) authenticated as 'flood'
+2026-10-07 13:16:57 INFO: ('127.0.0.1', 58365) (admin1) authenticated as admin.
+2026-10-07 13:16:57 INFO: Allowed message from flood@('127.0.0.1', 58367): m0
+2026-10-07 13:16:57 INFO: Allowed message from flood@('127.0.0.1', 58367): m1
+2026-10-07 13:16:57 INFO: Allowed message from flood@('127.0.0.1', 58367): m2
+2026-10-07 13:16:57 INFO: Allowed message from flood@('127.0.0.1', 58367): m3
+2026-10-07 13:16:57 INFO: Allowed message from flood@('127.0.0.1', 58367): m4
+2026-10-07 13:16:57 WARNING: Rate limit exceeded by flood@('127.0.0.1', 58367)
+2026-10-07 13:16:57 WARNING: Rate limit exceeded by flood@('127.0.0.1', 58367)
+2026-10-07 13:16:58 INFO: Admin ('127.0.0.1', 58365) (admin1) kicked user: bob
+2026-10-07 13:16:58 INFO: Disconnected ('127.0.0.1', 58366) (bob)
+2026-10-07 13:16:59 INFO: Disconnected ('127.0.0.1', 58365) (admin1)
+2026-10-07 13:16:59 INFO: Disconnected ('127.0.0.1', 58367) (flood)
